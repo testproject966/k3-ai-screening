@@ -124,6 +124,49 @@ function stop(auto){
 }
 
 $("saveBtn").onclick=async()=>{
-  if(!lastResult)return;$("saveBtn").disabled=true;
-  try{await fetch(api,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"saveScreening",data:lastResult})});$("status").textContent="TERKIRIM";alert("Hasil dikirim ke Spreadsheet.")}catch(e){$("status").textContent="GAGAL";alert("Pengiriman gagal.")}finally{$("saveBtn").disabled=false}
+  if(!lastResult)return;
+  if(lastResult.score===null)return alert("Screening tidak valid. Ulangi screening terlebih dahulu.");
+  $("saveBtn").disabled=true;
+  const statusMap={NORMAL:"NORMAL",FATIGUE:"POTENTIAL FATIGUE","DROWSINESS":"POTENTIAL DROWSINESS","HIGH DROWSINESS":"HIGH DROWSINESS"};
+  const status=statusMap[lastResult.level]||"NEEDS_VERIFICATION";
+  const confidence=Math.round(Math.min(100,(lastResult.face_coverage||0)*100));
+  const screeningId="WEB-"+Date.now();
+  const payload={
+    action:"saveScreening",
+    screening_id:screeningId,
+    employee_id:lastResult.employee_id,
+    status,
+    confidence,
+    duration_sec:lastResult.duration,
+    model_version:"MediaPipe Face Mesh v1.0",
+    notes:"PWA ULP Empang; screening awal berbasis kamera.",
+    features:{
+      perclos:lastResult.perclos,
+      blink_rate:lastResult.blink_count/Math.max(1,lastResult.duration/60),
+      avg_blink_duration:0,
+      yawn_count:lastResult.yawn_count,
+      head_nod_count:lastResult.nod_count,
+      gaze_stability:0,
+      face_quality:confidence,
+      head_pose:lastResult.nod_count,
+      observation_sec:lastResult.duration
+    },
+    result:{
+      fatigue_score:lastResult.score>=25?Math.min(100,lastResult.score):0,
+      drowsiness_score:lastResult.score,
+      confidence,
+      status,
+      model_version:"MediaPipe Face Mesh v1.0",
+      reason:"PERCLOS, kedipan, mulut terbuka, dan gerakan kepala.",
+      recommendation:"Tindak lanjuti sebagai screening awal sesuai prosedur K3L."
+    }
+  };
+  try{
+    await fetch(api,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
+    $("status").textContent="TERKIRIM";
+    alert("Hasil screening berhasil dikirim ke Spreadsheet.");
+  }catch(e){
+    $("status").textContent="GAGAL";
+    alert("Pengiriman gagal. Periksa koneksi API.");
+  }finally{$("saveBtn").disabled=false}
 };
