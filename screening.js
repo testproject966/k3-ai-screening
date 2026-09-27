@@ -28,7 +28,7 @@ async function loadAI(){
     $("status").textContent="MEMUAT AI...";
     await loadScript(MP_FACE_MESH);
     faceMesh=new FaceMesh({locateFile:file=>"https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/"+file});
-    faceMesh.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+    faceMesh.setOptions({maxNumFaces:1,refineLandmarks:true,selfieMode:true,minDetectionConfidence:0.35,minTrackingConfidence:0.35});
     faceMesh.onResults(onFaceResults);
     await faceMesh.initialize();
     mpReady=true;
@@ -47,6 +47,7 @@ function onFaceResults(res){
   const p=res.multiFaceLandmarks?.[0];
   if(!p||!running)return;
   faceFrames++;
+  if(running && faceFrames===1) $("status").textContent="WAJAH TERDETEKSI";
   const left=ear(p,[33,160,158,133,153,144]),right=ear(p,[362,385,387,263,373,380]),avgEar=(left+right)/2;
   const mouth=mar(p),noseY=p[1]?.y??0;
   const eyeClosed=avgEar<0.22,mouthOpen=mouth>0.38;
