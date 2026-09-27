@@ -76,12 +76,13 @@ $("checkBtn").onclick=async()=>{
   try{
     const r=await jsonp(api+"?action=employee&employee_id="+encodeURIComponent(id));
     if(!r.ok||!r.employee){$("employeeInfo").textContent="Pegawai tidak ditemukan.";$("status").textContent="TIDAK DITEMUKAN";return}
-    $("employeeInfo").innerHTML="<b>"+r.employee.employee_id+"</b> — "+(r.employee.nama||"")+"<br>"+(r.employee.unit||"");$("status").textContent="SIAP";
+    $("employeeInfo").innerHTML="<b>"+r.employee.employee_id+"</b> — "+(r.employee.name||r.employee.nama||"")+"<br>"+(r.employee.unit||"");$("status").textContent="SIAP";
   }catch(e){$("status").textContent="API ERROR";alert("Apps Script tidak dapat diakses.")}
 };
 
 $("startBtn").onclick=async()=>{
   if(!$("employeeId").value.trim())return alert("Cek ID Pegawai dahulu.");
+  if(!$("employeeInfo").textContent.includes("—")){}
   if(!navigator.mediaDevices?.getUserMedia)return alert("Browser tidak mendukung kamera.");
   if(!(await loadAI()))return;
   try{
